@@ -1,0 +1,1278 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>💾 CLOCK → NFT METADATA GENERATOR 💾</title>
+
+    <!-- RETRO FONTS: Press Start 2P (pixel), VT323 (terminal), plus Comic Sans as "crap" fallback -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+
+    <style>
+        /* ============================================================
+               ALL STYLES INLINED — with deliberate "crap design" choices
+               ============================================================ */
+
+        /* ---- GLOBAL CRAP ---- */
+        :root {
+            --bg: #1a0a2e;
+            --panel: #f0e68c;
+            --muted: #ff6b9d;
+            --accent: #00ff88;
+            --size: 520px;
+            font-family: 'Press Start 2P', 'Comic Sans MS', 'Chalkboard SE', cursive;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: none;
+            image-rendering: pixelated;
+        }
+
+        * {
+            box-sizing: border-box;
+            outline: 1px solid rgba(255, 0, 255, 0.15);
+        }
+
+        html,
+        body,
+        #app {
+            height: 100%;
+            margin: 0;
+            background: var(--bg);
+            color: #fff;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="30" viewBox="0 0 24 30"><polygon points="2,2 20,2 22,10 12,20 2,10" fill="%23ff00ff" stroke="%2300ff00" stroke-width="2"/><circle cx="12" cy="8" r="2" fill="%23ffff00"/></svg>') 12 8, auto;
+        }
+
+        /* ---- BLINKING MARQUEE ---- */
+        .crap-marquee {
+            background: #000;
+            color: #ff00ff;
+            font-family: 'Comic Sans MS', 'Press Start 2P', cursive;
+            font-size: 18px;
+            padding: 6px 0;
+            text-align: center;
+            border-bottom: 4px ridge #ffcc00;
+            border-top: 4px ridge #ffcc00;
+            animation: blinkText 0.8s step-end infinite;
+            text-shadow: 0 0 10px #ff00ff, 0 0 30px #00ffff;
+            letter-spacing: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            position: relative;
+            z-index: 2;
+        }
+        .crap-marquee span {
+            display: inline-block;
+            animation: marqueeScroll 12s linear infinite;
+        }
+        @keyframes marqueeScroll {
+            0% {
+                transform: translateX(100vw);
+            }
+            100% {
+                transform: translateX(-200%);
+            }
+        }
+        @keyframes blinkText {
+            0%,
+            49% {
+                opacity: 1;
+            }
+            50%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* ---- GLITCH OVERLAY ---- */
+        #glitch-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg,
+                    rgba(255, 0, 255, 0.03) 0px,
+                    rgba(0, 255, 255, 0.03) 2px,
+                    transparent 2px,
+                    transparent 6px);
+            animation: glitchFlicker 0.15s infinite alternate;
+        }
+        @keyframes glitchFlicker {
+            0% {
+                opacity: 0.1;
+                transform: translateX(-2px) skewX(0.5deg);
+            }
+            100% {
+                opacity: 0.3;
+                transform: translateX(2px) skewX(-0.5deg);
+            }
+        }
+
+        /* ---- APP LAYOUT ---- */
+        #app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            gap: 12px;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at 30% 40%, #2d1b4e, #0d0221);
+        }
+
+        /* ---- RAIN CANVAS ---- */
+        canvas#rain {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            background: transparent;
+            filter: hue-rotate(180deg) saturate(2);
+        }
+
+        /* ---- CLOCK WRAP ---- */
+        #clock-wrap {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            border: 8px dashed #ff00ff;
+            border-radius: 60px 20px 60px 20px;
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 40px #ff00ff, inset 0 0 40px #00ffff;
+            transform: rotate(0.5deg);
+        }
+
+        canvas#clock {
+            background: linear-gradient(145deg, #f9f3d9, #d4c9a8);
+            border-radius: 50%;
+            box-shadow: 0 0 0 6px #ff00ff, 0 0 0 12px #00ff88, 0 0 40px rgba(255, 0, 255, 0.6);
+            width: var(--size);
+            height: var(--size);
+            touch-action: none;
+            image-rendering: pixelated;
+            border: 4px solid #ffcc00;
+            transform: rotate(-1deg);
+        }
+
+        #digital {
+            font-family: 'VT323', 'Courier New', monospace;
+            font-weight: 700;
+            color: #00ff88;
+            font-size: 28px;
+            background: #000;
+            padding: 6px 20px;
+            border: 4px solid #ff00ff;
+            border-radius: 30px 0 30px 0;
+            text-shadow: 0 0 20px #00ff88, 0 0 60px #ff00ff;
+            letter-spacing: 6px;
+            box-shadow: inset 0 0 20px #00ff88, 0 0 30px #ff00ff;
+            transform: skewX(-3deg);
+            animation: blinkText 2s step-end infinite;
+        }
+
+        /* ---- CONTROLS PANEL ---- */
+        #controls {
+            width: var(--size);
+            background: repeating-linear-gradient(45deg,
+                    #f0e68c 0px, #f0e68c 10px,
+                    #ffb6c1 10px, #ffb6c1 20px);
+            border-radius: 30px 8px 30px 8px;
+            padding: 14px;
+            box-shadow: 0 0 0 4px #ff00ff, 0 0 0 8px #00ff88, 0 12px 40px rgba(255, 0, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 6px ridge #ffcc00;
+            transform: rotate(0.7deg);
+            position: relative;
+            z-index: 1;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px 10px;
+            border-radius: 20px 4px 20px 4px;
+            border-left: 6px solid #ff00ff;
+            border-right: 6px solid #00ff88;
+        }
+
+        .control {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            min-width: 100px;
+            font-size: 11px;
+            color: #fff;
+            font-family: 'Press Start 2P', 'Comic Sans MS', cursive;
+            text-shadow: 2px 2px 0 #ff00ff, -2px -2px 0 #00ffff;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px 10px;
+            border-radius: 12px 0 12px 0;
+            border: 2px solid #ffcc00;
+        }
+        .control.small {
+            flex: 0 0 auto;
+            align-items: center;
+            flex-direction: row;
+            gap: 6px;
+            font-size: 10px;
+            background: rgba(255, 0, 255, 0.2);
+            border-color: #00ff88;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 12px;
+            background: linear-gradient(90deg, #ff00ff, #00ff88, #ffcc00);
+            border-radius: 20px;
+            accent-color: #ff00ff;
+            box-shadow: 0 0 20px #ff00ff;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #ffcc00;
+            border-radius: 50%;
+            border: 4px solid #ff00ff;
+            box-shadow: 0 0 20px #ff00ff;
+            cursor: pointer;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        input[type="time"],
+        input[type="date"],
+        select {
+            padding: 8px 12px;
+            border-radius: 20px 4px 20px 4px;
+            border: 4px solid #ff00ff;
+            background: #1a0a2e;
+            color: #00ff88;
+            font-family: 'VT323', 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: inset 0 0 20px rgba(255, 0, 255, 0.3), 0 0 20px rgba(0, 255, 136, 0.3);
+            outline: none;
+            text-shadow: 0 0 10px #00ff88;
+        }
+        input[type="text"] {
+            width: 100px;
+        }
+        input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            accent-color: #ff00ff;
+            border-radius: 0;
+            box-shadow: 0 0 20px #ff00ff;
+            border: 4px solid #00ff88;
+        }
+
+        button {
+            background: linear-gradient(135deg, #ff00ff, #00ff88, #ffcc00);
+            color: #000;
+            border: 4px solid #fff;
+            padding: 10px 14px;
+            border-radius: 30px 0 30px 0;
+            font-weight: 900;
+            font-family: 'Press Start 2P', 'Comic Sans MS', cursive;
+            font-size: 10px;
+            min-width: 56px;
+            text-shadow: 2px 2px 0 #ff00ff, -2px -2px 0 #00ffff;
+            box-shadow: 0 0 20px #ff00ff, 0 0 40px #00ff88, inset 0 0 10px #fff;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="%23ff00ff" stroke="%2300ff00" stroke-width="2"/><circle cx="16" cy="16" r="6" fill="%23ffff00"/></svg>') 16 16, pointer;
+            transition: all 0.05s ease;
+            transform: rotate(-0.5deg);
+        }
+        button:hover {
+            transform: scale(1.1) rotate(2deg);
+            filter: hue-rotate(180deg);
+            box-shadow: 0 0 60px #ff00ff, 0 0 80px #00ff88;
+        }
+        button:active {
+            transform: scale(0.8) rotate(-5deg);
+            filter: hue-rotate(360deg);
+        }
+        button[aria-pressed="true"] {
+            background: linear-gradient(135deg, #00ff88, #ffcc00, #ff00ff);
+            border-color: #ff00ff;
+        }
+        #applyTime,
+        #nowBtn,
+        #resetBtn,
+        #generateMetaBtn {
+            background: linear-gradient(135deg, #ffcc00, #ff00ff);
+            color: #000;
+            border-color: #00ff88;
+        }
+        #generateMetaBtn {
+            background: linear-gradient(135deg, #ff00ff, #ffcc00, #00ff88);
+            font-size: 12px;
+            padding: 12px 20px;
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 20px #ff00ff, 0 0 40px #00ff88;
+            }
+            100% {
+                box-shadow: 0 0 60px #ff00ff, 0 0 100px #00ff88;
+            }
+        }
+
+        small {
+            font-size: 9px;
+            color: #ff00ff;
+            font-family: 'Comic Sans MS', 'Press Start 2P', cursive;
+            text-shadow: 0 0 10px #ff00ff, 0 0 20px #00ffff;
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 560px) {
+            :root {
+                --size: 320px;
+            }
+            canvas#clock {
+                width: var(--size);
+                height: var(--size);
+            }
+            #controls {
+                width: var(--size);
+            }
+            button {
+                padding: 8px 10px;
+                font-size: 8px;
+            }
+            .control {
+                font-size: 8px;
+                min-width: 70px;
+            }
+            #digital {
+                font-size: 18px;
+                padding: 4px 12px;
+            }
+            .crap-marquee {
+                font-size: 12px;
+                letter-spacing: 3px;
+            }
+        }
+
+        #clock-wrap {
+            animation: wobble 3s ease-in-out infinite alternate;
+        }
+        @keyframes wobble {
+            0% {
+                transform: rotate(-1.5deg) scale(0.99);
+            }
+            100% {
+                transform: rotate(2deg) scale(1.01);
+            }
+        }
+
+        #controls {
+            animation: wobble2 4s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes wobble2 {
+            0% {
+                transform: rotate(0.5deg) translateX(-2px);
+            }
+            100% {
+                transform: rotate(-1deg) translateX(2px);
+            }
+        }
+
+        #app::before {
+            content: "⏣ ⏣ ⏣ ⏣ ⏣ ⏣ ⏣ ⏣";
+            position: fixed;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff00ff;
+            font-size: 14px;
+            letter-spacing: 8px;
+            opacity: 0.3;
+            z-index: 0;
+            font-family: 'Press Start 2P', monospace;
+            animation: blinkText 1.2s step-end infinite;
+        }
+
+        [title] {
+            position: relative;
+        }
+        [title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000;
+            color: #ff00ff;
+            padding: 4px 12px;
+            border: 4px solid #00ff88;
+            border-radius: 10px 0 10px 0;
+            font-size: 8px;
+            white-space: nowrap;
+            font-family: 'Comic Sans MS', cursive;
+            box-shadow: 0 0 30px #ff00ff;
+            z-index: 999;
+        }
+
+        ::-webkit-scrollbar {
+            width: 16px;
+            background: #1a0a2e;
+        }
+        ::-webkit-scrollbar-track {
+            background: repeating-linear-gradient(45deg, #ff00ff, #ff00ff 4px, #00ff88 4px, #00ff88 8px);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ffcc00;
+            border: 4px solid #ff00ff;
+            border-radius: 20px;
+            box-shadow: 0 0 40px #ff00ff;
+        }
+
+        /* ---- MODAL (for metadata) ---- */
+        #metaModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s;
+        }
+        #metaModal.open {
+            display: flex;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .modal-box {
+            background: repeating-linear-gradient(45deg, #1a0a2e, #2d1b4e);
+            border: 8px ridge #ff00ff;
+            border-radius: 40px 12px 40px 12px;
+            padding: 24px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 0 80px rgba(255, 0, 255, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+        .modal-box::before {
+            content: "📄 METADATA";
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            color: #ff00ff;
+            opacity: 0.3;
+            transform: rotate(5deg);
+        }
+        .modal-box h2 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            color: #00ff88;
+            text-shadow: 0 0 20px #00ff88;
+            margin: 0;
+            padding-bottom: 8px;
+            border-bottom: 4px dashed #ff00ff;
+        }
+        .modal-box textarea {
+            flex: 1;
+            min-height: 250px;
+            background: #0d0221;
+            color: #00ff88;
+            border: 4px solid #ff00ff;
+            border-radius: 20px 4px 20px 4px;
+            padding: 16px;
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            resize: vertical;
+            box-shadow: inset 0 0 30px rgba(255, 0, 255, 0.2);
+            outline: none;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .modal-actions button {
+            min-width: 100px;
+            padding: 12px 20px;
+            font-size: 12px;
+        }
+        #closeModalBtn {
+            background: #444;
+            border-color: #ff6b9d;
+        }
+        #downloadMetaBtn {
+            background: #00ff88;
+            border-color: #ff00ff;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== GLITCH OVERLAY ===== -->
+    <div id="glitch-overlay" aria-hidden="true"></div>
+
+    <!-- ===== MARQUEE ===== -->
+    <div class="crap-marquee" role="marquee">
+        <span>
+            ✦ CLOCK → NFT METADATA GENERATOR ✦
+            &nbsp;▸&nbsp; CLICK "GENERATE METADATA" &nbsp;▸&nbsp;
+            ✦ TIME IS AN ILLUSION, BUT METADATA IS FOREVER ✦
+        </span>
+    </div>
+
+    <!-- ===== APP ===== -->
+    <main id="app">
+
+        <!-- background rain canvas -->
+        <canvas id="rain" aria-hidden="true"></canvas>
+
+        <section id="clock-wrap">
+            <canvas id="clock" width="520" height="520" aria-label="Analog clock"></canvas>
+            <div id="digital" aria-live="polite">--:--:--</div>
+        </section>
+
+        <nav id="controls" role="region" aria-label="Clock controls">
+            <div class="row">
+                <button id="playPause" aria-pressed="false" title="Play / Pause">⏸ PAUSE</button>
+                <label class="control small">
+                    ⚡ SPEED
+                    <input id="speed" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" value="1" />
+                </label>
+                <label class="control small">
+                    🌀 MODE
+                    <select id="mode" aria-label="Clock mode">
+                        <option value="simulated">SIM</option>
+                        <option value="realtime">REAL</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="row">
+                <label class="control">
+                    📅 DATE
+                    <input id="setDate" type="date" />
+                </label>
+                <label class="control">
+                    ⌚ TIME
+                    <input id="setTime" type="time" />
+                </label>
+                <button id="applyTime">⚡ SET</button>
+            </div>
+
+            <div class="row">
+                <label class="control">
+                    🌍 TZ
+                    <select id="timezone"></select>
+                </label>
+                <label class="control small">
+                    24h
+                    <input id="toggle24" type="checkbox" />
+                </label>
+            </div>
+
+            <div class="row small">
+                <button id="nowBtn">🔄 NOW</button>
+                <button id="resetBtn">⟲ RESET</button>
+                <button id="generateMetaBtn">📄 GENERATE METADATA</button>
+            </div>
+        </nav>
+
+        <small style="margin-top:4px;z-index:1;position:relative;background:#000;padding:2px 16px;border-radius:20px;border:2px solid #ff00ff;">
+            ⚡ CRAP DESIGN v2.0 — MADE WITH 💩 &amp; ☕
+        </small>
+    </main>
+
+    <!-- ===== METADATA MODAL ===== -->
+    <div id="metaModal" role="dialog" aria-modal="true">
+        <div class="modal-box">
+            <h2>📄 ERC721 METADATA</h2>
+            <textarea id="metaTextarea" readonly></textarea>
+            <div class="modal-actions">
+                <button id="closeModalBtn">✖ CLOSE</button>
+                <button id="downloadMetaBtn">⬇ DOWNLOAD .JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ALL JAVASCRIPT INLINED                                        -->
+    <!-- ============================================================ -->
+    <script>
+        (function() {
+            'use strict';
+
+            // ---- DOM refs ----
+            const rainCanvas = document.getElementById('rain');
+            const rainCtx = rainCanvas.getContext('2d');
+
+            const canvas = document.getElementById('clock');
+            const ctx = canvas.getContext('2d');
+            const digital = document.getElementById('digital');
+            const playPauseBtn = document.getElementById('playPause');
+            const speedInput = document.getElementById('speed');
+            const setTimeInput = document.getElementById('setTime');
+            const setDateInput = document.getElementById('setDate');
+            const applyTimeBtn = document.getElementById('applyTime');
+            const timezoneSelect = document.getElementById('timezone');
+            const toggle24 = document.getElementById('toggle24');
+            const nowBtn = document.getElementById('nowBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const modeSelect = document.getElementById('mode');
+            const generateMetaBtn = document.getElementById('generateMetaBtn');
+            const metaModal = document.getElementById('metaModal');
+            const metaTextarea = document.getElementById('metaTextarea');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const downloadMetaBtn = document.getElementById('downloadMetaBtn');
+
+            // ---- DPR ----
+            const DPR = Math.max(1, window.devicePixelRatio || 1);
+
+            // ---- clock canvas sizing ----
+            let width = canvas.width;
+            let height = canvas.height;
+            let radius = width / 2;
+            canvas.width = width * DPR;
+            canvas.height = height * DPR;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            ctx.scale(DPR, DPR);
+
+            // ---- rain canvas sizing ----
+            function resizeRain() {
+                rainCanvas.style.width = window.innerWidth + 'px';
+                rainCanvas.style.height = window.innerHeight + 'px';
+                rainCanvas.width = Math.floor(window.innerWidth * DPR);
+                rainCanvas.height = Math.floor(window.innerHeight * DPR);
+                rainCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+            }
+            window.addEventListener('resize', resizeRain);
+            resizeRain();
+
+            // ---- state ----
+            let running = true;
+            let speed = parseFloat(speedInput.value) || 1;
+            let timezoneOffsetMinutes = 0;
+            let use24 = false;
+            let mode = 'simulated';
+
+            let simulatedTime = Date.now();
+            let lastTick = performance.now();
+            let initialSimulatedTime = simulatedTime;
+            let initialSimulatedDate = new Date(simulatedTime);
+
+            // ---- timezone select ----
+            const zones = [
+                { label: 'Local', value: 'local' },
+                { label: 'UTC', value: '0' },
+                { label: 'UTC−12', value: '-720' },
+                { label: 'UTC−8 (PST)', value: '-480' },
+                { label: 'UTC−5 (EST)', value: '-300' },
+                { label: 'UTC−3', value: '-180' },
+                { label: 'UTC+1 (CET)', value: '60' },
+                { label: 'UTC+2', value: '120' },
+                { label: 'UTC+5:30 (IST)', value: '330' },
+                { label: 'UTC+8', value: '480' },
+                { label: 'UTC+9 (JST)', value: '540' },
+                { label: 'UTC+12', value: '720' }
+            ];
+            zones.forEach(z => {
+                const opt = document.createElement('option');
+                opt.value = z.value;
+                opt.textContent = z.label;
+                timezoneSelect.appendChild(opt);
+            });
+            timezoneSelect.value = 'local';
+
+            // ---- helpers ----
+            function nowWithOffset(ms) {
+                if (timezoneSelect.value === 'local') return new Date(ms);
+                const offset = parseInt(timezoneSelect.value, 10);
+                const utcMs = ms + (new Date()).getTimezoneOffset() * 60000;
+                return new Date(utcMs + offset * 60000);
+            }
+
+            function formatDigital(date) {
+                const hh = date.getHours();
+                const mm = date.getMinutes().toString().padStart(2, '0');
+                const ss = date.getSeconds().toString().padStart(2, '0');
+                if (use24) return `${hh.toString().padStart(2,'0')}:${mm}:${ss}`;
+                const h12 = ((hh + 11) % 12) + 1;
+                const ampm = hh >= 12 ? 'PM' : 'AM';
+                return `${h12.toString().padStart(2,'0')}:${mm}:${ss} ${ampm}`;
+            }
+
+            // ---- digital rain ----
+            const rain = {
+                cols: [],
+                charSize: 18,
+                colors: { head: '#ff6b9d', trail: 'rgba(255,107,157,0.15)' },
+                initialized: false
+            };
+
+            function initRain() {
+                const cols = Math.floor(window.innerWidth / rain.charSize);
+                rain.cols = new Array(cols).fill(0).map(() => ({
+                    y: Math.random() * -1000,
+                    speed: 0.6 + Math.random() * 1.6
+                }));
+                rain.initialized = true;
+            }
+
+            function drawRain() {
+                const ctx2 = rainCtx;
+                const W = window.innerWidth;
+                const H = window.innerHeight;
+                ctx2.fillStyle = 'rgba(10,0,20,0.22)';
+                ctx2.fillRect(0, 0, W, H);
+
+                ctx2.font = `${rain.charSize}px monospace`;
+                ctx2.textBaseline = 'top';
+                const cols = rain.cols.length;
+                for (let i = 0; i < cols; i++) {
+                    const colX = i * rain.charSize;
+                    const col = rain.cols[i];
+                    const chCode = 48 + Math.floor(Math.random() * 58);
+                    const ch = String.fromCharCode(chCode);
+                    ctx2.fillStyle = rain.colors.head;
+                    ctx2.fillText(ch, colX, col.y);
+                    let trailY = col.y - rain.charSize;
+                    let alpha = 0.6;
+                    for (let t = 0; t < 6; t++) {
+                        if (trailY < 0) break;
+                        ctx2.fillStyle = `rgba(255,107,157,${alpha*0.07})`;
+                        ctx2.fillText(ch, colX, trailY);
+                        trailY -= rain.charSize;
+                        alpha *= 0.75;
+                    }
+                    col.y += col.speed * (DPR);
+                    if (col.y > H + Math.random() * 1000) {
+                        col.y = -Math.random() * 1000;
+                        col.speed = 0.6 + Math.random() * 1.6;
+                    }
+                }
+            }
+
+            let lastRain = performance.now();
+
+            function rainLoop(now) {
+                const dt = now - lastRain;
+                lastRain = now;
+                if (!rain.initialized) initRain();
+                drawRain();
+                requestAnimationFrame(rainLoop);
+            }
+            requestAnimationFrame(rainLoop);
+
+            // ---- draw clock ----
+            function drawClock(date, simTime) {
+                ctx.clearRect(0, 0, width, height);
+                const cx = width / 2,
+                    cy = height / 2;
+                const r = radius * 0.95;
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.fillStyle = '#f9f3d9';
+                ctx.fill();
+
+                for (let i = 0; i < 60; i++) {
+                    const angle = (i / 60) * Math.PI * 2;
+                    const inner = r * 0.86;
+                    const outer = r * 0.96;
+                    ctx.beginPath();
+                    ctx.lineWidth = (i % 5 === 0) ? 3 : 1.5;
+                    ctx.strokeStyle = '#222';
+                    const x1 = cx + inner * Math.cos(angle - Math.PI / 2);
+                    const y1 = cy + inner * Math.sin(angle - Math.PI / 2);
+                    const x2 = cx + outer * Math.cos(angle - Math.PI / 2);
+                    const y2 = cy + outer * Math.sin(angle - Math.PI / 2);
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = '#222';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = `${Math.round(r*0.05)}px sans-serif`;
+                const secLabelRadius = r * 0.9;
+                for (let s = 0; s <= 55; s += 5) {
+                    const ang = (s / 60) * Math.PI * 2 - Math.PI / 2;
+                    const nx = cx + secLabelRadius * Math.cos(ang);
+                    const ny = cy + secLabelRadius * Math.sin(ang);
+                    ctx.fillText(String(s).padStart(2, '0'), nx, ny);
+                }
+
+                ctx.fillStyle = '#111';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = use24 ? `${Math.round(r*0.08)}px sans-serif` : `${Math.round(r*0.12)}px sans-serif`;
+
+                if (use24) {
+                    for (let n = 1; n <= 24; n++) {
+                        const ang = (n / 24) * Math.PI * 2 - Math.PI / 2;
+                        const nx = cx + r * 0.74 * Math.cos(ang);
+                        const ny = cy + r * 0.74 * Math.sin(ang);
+                        ctx.fillText(String(n), nx, ny);
+                    }
+                } else {
+                    for (let n = 1; n <= 12; n++) {
+                        const ang = (n / 12) * Math.PI * 2 - Math.PI / 2;
+                        const nx = cx + r * 0.68 * Math.cos(ang);
+                        const ny = cy + r * 0.68 * Math.sin(ang);
+                        ctx.fillText(String(n), nx, ny);
+                    }
+                }
+
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const maxDays = new Date(year, month + 1, 0).getDate();
+                ctx.fillStyle = '#2b6fd6';
+                ctx.font = `${Math.round(r*0.06)}px sans-serif`;
+                const dayRadius = r * 0.5;
+                for (let d = 1; d <= maxDays; d++) {
+                    const ang = ((d - 1) / maxDays) * Math.PI * 2 - Math.PI / 2;
+                    const nx = cx + dayRadius * Math.cos(ang);
+                    const ny = cy + dayRadius * Math.sin(ang);
+                    ctx.fillText(String(d), nx, ny);
+                }
+
+                ctx.fillStyle = '#0a9b58';
+                ctx.font = `${Math.round(r*0.06)}px sans-serif`;
+                const monthRadius = r * 0.35;
+                for (let m = 1; m <= 12; m++) {
+                    const ang = ((m - 1) / 12) * Math.PI * 2 - Math.PI / 2;
+                    const nx = cx + monthRadius * Math.cos(ang);
+                    const ny = cy + monthRadius * Math.sin(ang);
+                    ctx.fillText(String(m).padStart(2, '0'), nx, ny);
+                }
+
+                ctx.fillStyle = '#8B0000';
+                ctx.font = `${Math.round(r*0.04)}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const msLabelRadius = r * 0.62;
+                for (let mval = 0; mval <= 950; mval += 50) {
+                    const frac = (mval / 1000);
+                    const ang = (frac) * Math.PI * 2 - Math.PI / 2;
+                    const nx = cx + msLabelRadius * Math.cos(ang);
+                    const ny = cy + msLabelRadius * Math.sin(ang);
+                    ctx.fillText(String(mval).padStart(3, '0'), nx, ny);
+                }
+
+                const hours = date.getHours();
+                const mm = date.getMinutes();
+                const ss = date.getSeconds();
+                const totalSecondsFloat = simTime / 1000;
+                const fractionalSecond = totalSecondsFloat - Math.floor(totalSecondsFloat);
+                const msFloat = fractionalSecond * 1000;
+                const ms = Math.floor(msFloat);
+                const day = date.getDate();
+                const monthOneBased = date.getMonth() + 1;
+
+                const minAngle = ((mm + (ss + ms / 1000) / 60) / 60) * Math.PI * 2;
+                const hourAngle = use24 ?
+                    ((hours + mm / 60 + ss / 3600) / 24) * Math.PI * 2 :
+                    (((hours % 12) + mm / 60 + ss / 3600) / 12) * Math.PI * 2;
+                const secAngle = ((ss + ms / 1000) / 60) * Math.PI * 2;
+
+                const totalSeconds = simTime / 1000;
+                const msAngle = ((totalSeconds * 1e3) % 1) * Math.PI * 2;
+                const microAngle = ((totalSeconds * 1e6) % 1) * Math.PI * 2;
+                const nanoAngle = ((totalSeconds * 1e8) % 1) * Math.PI * 2;
+                const subNanoAngle = ((totalSeconds * 1e12) % 1) * Math.PI * 2;
+
+                const dayAngle = (((day - 1) / maxDays) * Math.PI * 2);
+                const monthAngle = (((monthOneBased - 1) / 12) * Math.PI * 2);
+
+                const fullYear = date.getFullYear();
+                const yearsAmount = ((fullYear % 1000) + 1000) % 1000;
+                const kiloyearsAmount = Math.floor(Math.abs(fullYear) / 1000) % 1000;
+                const yearAngle = (yearsAmount / 1000) * Math.PI * 2;
+                const kiloyearAngle = (kiloyearsAmount / 1000) * Math.PI * 2;
+
+                const yearHue = (360 * yearsAmount / 1000) % 360;
+                const kiloyearHue = (360 * kiloyearsAmount / 2000) % 360;
+
+                function drawHand(cx2, cy2, angle, length, width2, strokeStyle) {
+                    ctx.beginPath();
+                    ctx.lineWidth = width2;
+                    ctx.lineCap = 'round';
+                    ctx.strokeStyle = strokeStyle;
+                    const x = cx2 + length * Math.cos(angle - Math.PI / 2);
+                    const y = cy2 + length * Math.sin(angle - Math.PI / 2);
+                    ctx.moveTo(cx2, cy2);
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                }
+
+                drawHand(cx, cy, hourAngle, r * 0.5, 8, '#111');
+                drawHand(cx, cy, minAngle, r * 0.72, 6, '#111');
+                drawHand(cx, cy, secAngle, r * 0.82, 2, '#e53935');
+                drawHand(cx, cy, dayAngle, r * 0.78, 4, '#2b6fd6');
+                drawHand(cx, cy, monthAngle, r * 0.62, 5, '#0a9b58');
+                drawHand(cx, cy, yearAngle, r * 0.68, 4, `hsl(${yearHue},80%,50%)`);
+                drawHand(cx, cy, kiloyearAngle, r * 0.56, 3, `hsl(${kiloyearHue},70%,45%)`);
+                drawHand(cx, cy, msAngle, r * 0.82, 3, '#8B0000');
+                drawHand(cx, cy, microAngle, r * 0.68, 2, '#FF8C00');
+                drawHand(cx, cy, nanoAngle, r * 0.56, 1.5, '#DAA520');
+                drawHand(cx, cy, subNanoAngle, r * 0.44, 1, '#006400');
+
+                ctx.beginPath();
+                ctx.fillStyle = '#111';
+                ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // ---- animation loop ----
+            function tick(now) {
+                const dt = now - lastTick;
+                lastTick = now;
+
+                if (mode === 'realtime') {
+                    simulatedTime = Date.now();
+                } else {
+                    if (running) {
+                        simulatedTime += dt * speed;
+                    }
+                }
+
+                const date = nowWithOffset(simulatedTime);
+                drawClock(date, simulatedTime);
+                digital.textContent = formatDigital(date);
+                requestAnimationFrame(tick);
+            }
+
+            // ---- controls ----
+            playPauseBtn.addEventListener('click', () => {
+                running = !running;
+                playPauseBtn.textContent = running ? '⏸ PAUSE' : '▶ PLAY';
+                playPauseBtn.setAttribute('aria-pressed', String(!running));
+            });
+
+            speedInput.addEventListener('input', () => {
+                let val = speedInput.value;
+                val = val.replace(/[^0-9.]/g, '');
+                const parts = val.split('.');
+                if (parts.length > 2) {
+                    val = parts.shift() + '.' + parts.join('');
+                }
+                if (val.length > 1 && val[0] === '0' && val[1] !== '.') {
+                    val = String(Number(val));
+                }
+                speedInput.value = val;
+                const v = parseFloat(val);
+                if (!Number.isNaN(v)) speed = v;
+            });
+
+            speedInput.addEventListener('keydown', (e) => {
+                const allowed = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Delete', 'Tab', 'Home', 'End'];
+                if (allowed.includes(e.key)) return;
+                if (e.ctrlKey || e.metaKey) return;
+                if ((e.key >= '0' && e.key <= '9')) return;
+                if (e.key === '.') {
+                    if (speedInput.value.includes('.')) e.preventDefault();
+                    return;
+                }
+                e.preventDefault();
+            });
+
+            speedInput.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text') || '';
+                let sanitized = text.replace(/[^0-9.]/g, '');
+                const parts = sanitized.split('.');
+                if (parts.length > 2) {
+                    sanitized = parts.shift() + '.' + parts.join('');
+                }
+                if (sanitized) {
+                    speedInput.value = sanitized;
+                    const v = parseFloat(sanitized);
+                    if (!Number.isNaN(v)) speed = v;
+                }
+            });
+
+            applyTimeBtn.addEventListener('click', () => {
+                const timeVal = setTimeInput.value;
+                const dateVal = setDateInput.value;
+                if (!timeVal && !dateVal) return;
+
+                const base = new Date(simulatedTime);
+                if (dateVal) {
+                    const [y, mth, d] = dateVal.split('-').map(v => parseInt(v, 10));
+                    base.setFullYear(y, mth - 1, d);
+                }
+                if (timeVal) {
+                    const [h, m] = timeVal.split(':').map(v => parseInt(v, 10));
+                    base.setHours(h, m, 0, 0);
+                } else {
+                    base.setSeconds(0, 0);
+                }
+
+                if (timezoneSelect.value === 'local') {
+                    simulatedTime = base.getTime();
+                } else {
+                    const offset = parseInt(timezoneSelect.value, 10);
+                    const utcMs = Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base
+                        .getMinutes(), 0, 0);
+                    simulatedTime = utcMs - (new Date()).getTimezoneOffset() * 60000 + offset * 60000;
+                }
+            });
+
+            modeSelect.addEventListener('change', () => {
+                mode = modeSelect.value;
+                if (mode === 'realtime') {
+                    running = true;
+                    playPauseBtn.disabled = true;
+                    speedInput.disabled = true;
+                    playPauseBtn.setAttribute('aria-pressed', 'false');
+                    playPauseBtn.textContent = '⏸ PAUSE';
+                } else {
+                    playPauseBtn.disabled = false;
+                    speedInput.disabled = false;
+                }
+            });
+
+            toggle24.addEventListener('change', () => {
+                use24 = toggle24.checked;
+            });
+
+            nowBtn.addEventListener('click', () => {
+                simulatedTime = Date.now();
+                const d = new Date(simulatedTime);
+                setDateInput.value = d.toISOString().slice(0, 10);
+            });
+
+            resetBtn.addEventListener('click', () => {
+                simulatedTime = initialSimulatedTime;
+                const d = new Date(initialSimulatedDate.getTime());
+                setDateInput.value = d.toISOString().slice(0, 10);
+                speedInput.value = '1';
+                speed = 1;
+                running = true;
+                playPauseBtn.textContent = '⏸ PAUSE';
+                toggle24.checked = false;
+                use24 = false;
+                timezoneSelect.value = 'local';
+            });
+
+            // ---- dragging ----
+            let dragging = false;
+
+            function getPointer(evt) {
+                if (evt.touches) return evt.touches[0];
+                return evt;
+            }
+
+            function pointerDown(evt) {
+                const p = getPointer(evt);
+                const rect = canvas.getBoundingClientRect();
+                const x = p.clientX - rect.left;
+                const y = p.clientY - rect.top;
+                dragging = true;
+                onDragSet(x, y);
+                evt.preventDefault();
+            }
+
+            function pointerMove(evt) {
+                if (!dragging) return;
+                const p = getPointer(evt);
+                const rect = canvas.getBoundingClientRect();
+                const x = p.clientX - rect.left;
+                const y = p.clientY - rect.top;
+                onDragSet(x, y);
+                evt.preventDefault();
+            }
+
+            function pointerUp(evt) {
+                dragging = false;
+            }
+
+            function onDragSet(x, y) {
+                const cx2 = width / 2,
+                    cy2 = height / 2;
+                const dx = x - cx2,
+                    dy = y - cy2;
+                const angle = Math.atan2(dy, dx) + Math.PI / 2;
+                const normalized = (angle < 0 ? angle + Math.PI * 2 : angle) / (Math.PI * 2);
+                const hoursFloat = normalized * 12;
+                const hour = Math.floor(hoursFloat);
+                const minutesFloat = (hoursFloat - hour) * 60;
+                const minute = Math.floor(minutesFloat);
+                const second = Math.round((minutesFloat - minute) * 60);
+
+                const base = new Date(simulatedTime);
+                const current12 = base.getHours() % 12;
+                let diff = (hour - current12 + 12) % 12;
+                if (diff > 6) diff -= 12;
+                const targetHour = base.getHours() + diff;
+                base.setHours(targetHour, minute, second, 0);
+                simulatedTime = base.getTime();
+            }
+
+            canvas.addEventListener('mousedown', pointerDown);
+            window.addEventListener('mousemove', pointerMove);
+            window.addEventListener('mouseup', pointerUp);
+            canvas.addEventListener('touchstart', pointerDown, { passive: false });
+            window.addEventListener('touchmove', pointerMove, { passive: false });
+            window.addEventListener('touchend', pointerUp);
+
+            // ---- METADATA GENERATOR ----
+            generateMetaBtn.addEventListener('click', function() {
+                // Capture current state
+                const date = nowWithOffset(simulatedTime);
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                const hours = date.getHours();
+                const minutes = date.getMinutes();
+                const seconds = date.getSeconds();
+                const ms = Math.floor((simulatedTime / 1000 - Math.floor(simulatedTime / 1000)) * 1000);
+
+                // Capture canvas image as data URL (PNG)
+                const imageDataURL = canvas.toDataURL('image/png');
+
+                // Build metadata object
+                const metadata = {
+                    name: `Clock NFT #${Date.now().toString(16)}`,
+                    description: `A unique clock moment captured at ${hours}:${minutes}:${seconds} on ${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}.`,
+                    image: imageDataURL,
+                    attributes: [{
+                        trait_type: "Year",
+                        value: year
+                    }, {
+                        trait_type: "Month",
+                        value: month
+                    }, {
+                        trait_type: "Day",
+                        value: day
+                    }, {
+                        trait_type: "Hour (24h)",
+                        value: hours
+                    }, {
+                        trait_type: "Minute",
+                        value: minutes
+                    }, {
+                        trait_type: "Second",
+                        value: seconds
+                    }, {
+                        trait_type: "Millisecond",
+                        value: ms
+                    }, {
+                        trait_type: "Speed (sim sec/real sec)",
+                        value: parseFloat(speed).toFixed(2)
+                    }, {
+                        trait_type: "Mode",
+                        value: mode
+                    }, {
+                        trait_type: "Timezone",
+                        value: timezoneSelect.options[timezoneSelect.selectedIndex].text
+                    }, {
+                        trait_type: "24h Format",
+                        value: use24 ? "Yes" : "No"
+                    }, {
+                        trait_type: "Running",
+                        value: running ? "Yes" : "No"
+                    }]
+                };
+
+                // Add extra info like timestamp
+                metadata.attributes.push({
+                    trait_type: "Unix Timestamp (ms)",
+                    value: simulatedTime
+                });
+
+                const jsonString = JSON.stringify(metadata, null, 2);
+                metaTextarea.value = jsonString;
+                metaModal.classList.add('open');
+            });
+
+            // ---- modal controls ----
+            function closeModal() {
+                metaModal.classList.remove('open');
+            }
+
+            closeModalBtn.addEventListener('click', closeModal);
+            metaModal.addEventListener('click', function(e) {
+                if (e.target === metaModal) closeModal();
+            });
+
+            downloadMetaBtn.addEventListener('click', function() {
+                const json = metaTextarea.value;
+                if (!json) return;
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `clock-metadata-${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+
+            // ---- start ----
+            lastTick = performance.now();
+            initialSimulatedTime = simulatedTime;
+            initialSimulatedDate = new Date(simulatedTime);
+            requestAnimationFrame(tick);
+
+            // ---- init UI ----
+            speedInput.value = parseFloat(speed).toFixed(2);
+            setTimeInput.value = (() => { const d = new Date(simulatedTime); return d.toTimeString().slice(0, 5); })();
+            setDateInput.value = (() => { const d = new Date(simulatedTime); return d.toISOString().slice(0, 10); })();
+
+            if (typeof modeSelect !== 'undefined' && modeSelect !== null) {
+                modeSelect.value = mode;
+                const ev = new Event('change');
+                modeSelect.dispatchEvent(ev);
+            }
+
+            function onResize() {
+                const rect = canvas.getBoundingClientRect();
+                width = rect.width;
+                height = rect.height;
+                radius = width / 2;
+            }
+            window.addEventListener('resize', onResize);
+            onResize();
+
+        })();
+    </script>
+
+</body>
+</html>
