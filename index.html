@@ -3,23 +3,21 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>💾 CLOCK → NFT METADATA GENERATOR 💾</title>
+    <title>Clock NFT — Time‑Locked Secrets</title>
 
-    <!-- RETRO FONTS: Press Start 2P (pixel), VT323 (terminal), plus Comic Sans as "crap" fallback -->
+    <!-- RETRO FONTS -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
 
     <style>
         /* ============================================================
-               ALL STYLES INLINED — with deliberate "crap design" choices
-               ============================================================ */
-
-        /* ---- GLOBAL CRAP ---- */
+           GLOBAL CRAP STYLES (same as before)
+           ============================================================ */
         :root {
             --bg: #1a0a2e;
             --panel: #f0e68c;
             --muted: #ff6b9d;
             --accent: #00ff88;
-            --size: 520px;
+            --size: 420px;
             font-family: 'Press Start 2P', 'Comic Sans MS', 'Chalkboard SE', cursive;
             -webkit-font-smoothing: none;
             -moz-osx-font-smoothing: none;
@@ -28,7 +26,7 @@
 
         * {
             box-sizing: border-box;
-            outline: 1px solid rgba(255, 0, 255, 0.15);
+            outline: 1px solid rgba(255, 0, 255, 0.10);
         }
 
         html,
@@ -41,7 +39,7 @@
             cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="30" viewBox="0 0 24 30"><polygon points="2,2 20,2 22,10 12,20 2,10" fill="%23ff00ff" stroke="%2300ff00" stroke-width="2"/><circle cx="12" cy="8" r="2" fill="%23ffff00"/></svg>') 12 8, auto;
         }
 
-        /* ---- BLINKING MARQUEE ---- */
+        /* ---- MARQUEE (slower) ---- */
         .crap-marquee {
             background: #000;
             color: #ff00ff;
@@ -61,7 +59,7 @@
         }
         .crap-marquee span {
             display: inline-block;
-            animation: marqueeScroll 12s linear infinite;
+            animation: marqueeScroll 30s linear infinite;
         }
         @keyframes marqueeScroll {
             0% {
@@ -106,18 +104,19 @@
             }
         }
 
-        /* ---- APP LAYOUT ---- */
+        /* ---- APP LAYOUT (LANDSCAPE) ---- */
         #app {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
-            padding: 12px;
-            gap: 12px;
+            padding: 16px;
+            gap: 20px;
             min-height: 100vh;
             position: relative;
             overflow: hidden;
             background: radial-gradient(circle at 30% 40%, #2d1b4e, #0d0221);
+            flex-wrap: wrap;
         }
 
         /* ---- RAIN CANVAS ---- */
@@ -133,7 +132,7 @@
             filter: hue-rotate(180deg) saturate(2);
         }
 
-        /* ---- CLOCK WRAP ---- */
+        /* ---- LEFT: CLOCK WRAP ---- */
         #clock-wrap {
             position: relative;
             z-index: 1;
@@ -147,6 +146,7 @@
             background: rgba(0, 0, 0, 0.4);
             box-shadow: 0 0 40px #ff00ff, inset 0 0 40px #00ffff;
             transform: rotate(0.5deg);
+            flex: 0 0 auto;
         }
 
         canvas#clock {
@@ -177,22 +177,24 @@
             animation: blinkText 2s step-end infinite;
         }
 
-        /* ---- CONTROLS PANEL ---- */
+        /* ---- RIGHT: CONTROLS PANEL ---- */
         #controls {
-            width: var(--size);
+            position: relative;
+            z-index: 1;
+            flex: 1 1 500px;
+            min-width: 360px;
+            max-width: 700px;
             background: repeating-linear-gradient(45deg,
                     #f0e68c 0px, #f0e68c 10px,
                     #ffb6c1 10px, #ffb6c1 20px);
             border-radius: 30px 8px 30px 8px;
-            padding: 14px;
+            padding: 16px;
             box-shadow: 0 0 0 4px #ff00ff, 0 0 0 8px #00ff88, 0 12px 40px rgba(255, 0, 255, 0.5);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
             border: 6px ridge #ffcc00;
             transform: rotate(0.7deg);
-            position: relative;
-            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .row {
@@ -232,6 +234,133 @@
             border-color: #00ff88;
         }
 
+        /* ---- MESSAGE SECTION (with encryption) ---- */
+        .message-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px;
+            border-radius: 20px 4px 20px 4px;
+            border-left: 6px solid #ffcc00;
+            border-right: 6px solid #ff00ff;
+        }
+        .message-row textarea {
+            width: 100%;
+            min-height: 60px;
+            background: #0d0221;
+            color: #00ff88;
+            border: 4px solid #ff00ff;
+            border-radius: 16px 4px 16px 4px;
+            padding: 10px;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            resize: vertical;
+            box-shadow: inset 0 0 30px rgba(255, 0, 255, 0.2);
+            outline: none;
+        }
+        .message-row .input-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .message-row .input-group label {
+            font-size: 10px;
+            color: #ffcc00;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .message-row .input-group input[type="password"],
+        .message-row .input-group input[type="datetime-local"] {
+            flex: 1;
+            min-width: 120px;
+            padding: 6px 10px;
+            background: #0d0221;
+            color: #00ff88;
+            border: 4px solid #ff00ff;
+            border-radius: 16px 4px 16px 4px;
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            outline: none;
+        }
+        .message-row .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .message-row .actions button {
+            min-width: 80px;
+            padding: 8px 12px;
+            font-size: 9px;
+        }
+        .message-status {
+            font-size: 10px;
+            color: #ffcc00;
+            text-shadow: 0 0 10px #ffcc00;
+            font-family: 'VT323', monospace;
+            word-break: break-all;
+        }
+
+        /* ---- REVEAL SECTION ---- */
+        .reveal-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px;
+            border-radius: 20px 4px 20px 4px;
+            border-left: 6px solid #00ff88;
+            border-right: 6px solid #ffcc00;
+        }
+        .reveal-row .input-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .reveal-row .input-group input[type="password"] {
+            flex: 1;
+            min-width: 120px;
+            padding: 6px 10px;
+            background: #0d0221;
+            color: #00ff88;
+            border: 4px solid #ff00ff;
+            border-radius: 16px 4px 16px 4px;
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            outline: none;
+        }
+        .reveal-row .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .reveal-row input[type="file"] {
+            background: #1a0a2e;
+            color: #00ff88;
+            border: 4px solid #ff00ff;
+            border-radius: 20px 4px 20px 4px;
+            padding: 6px 12px;
+            font-family: 'VT323', monospace;
+            font-size: 12px;
+            max-width: 200px;
+        }
+        .revealed-message {
+            background: #000;
+            padding: 8px 14px;
+            border-radius: 20px 4px 20px 4px;
+            border: 4px solid #ffcc00;
+            color: #ff6b9d;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            min-height: 40px;
+            word-break: break-all;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.3);
+        }
+
+        /* ---- INPUTS & BUTTONS (inherited) ---- */
         input[type="range"] {
             width: 100%;
             height: 12px;
@@ -292,7 +421,7 @@
             min-width: 56px;
             text-shadow: 2px 2px 0 #ff00ff, -2px -2px 0 #00ffff;
             box-shadow: 0 0 20px #ff00ff, 0 0 40px #00ff88, inset 0 0 10px #fff;
-            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="%23ff00ff" stroke="%2300ff00" stroke-width="2"/><circle cx="16" cy="16" r="6" fill="%23ffff00"/></svg>') 16 16, pointer;
+            cursor: pointer;
             transition: all 0.05s ease;
             transform: rotate(-0.5deg);
         }
@@ -340,110 +469,63 @@
             letter-spacing: 2px;
         }
 
-        @media (max-width: 560px) {
+        /* ---- RESPONSIVE ---- */
+        @media (max-width: 820px) {
+            #app {
+                flex-direction: column;
+                align-items: center;
+                padding: 12px;
+                gap: 12px;
+            }
+            #controls {
+                width: 100%;
+                max-width: 520px;
+                min-width: unset;
+                flex: none;
+            }
             :root {
-                --size: 320px;
+                --size: 360px;
             }
             canvas#clock {
                 width: var(--size);
                 height: var(--size);
             }
-            #controls {
-                width: var(--size);
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --size: 280px;
             }
-            button {
-                padding: 8px 10px;
-                font-size: 8px;
+            .row {
+                flex-direction: column;
+                align-items: stretch;
             }
-            .control {
-                font-size: 8px;
-                min-width: 70px;
+            .control.small {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            .message-row .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .message-row .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .reveal-row .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .reveal-row .actions {
+                flex-direction: column;
+                align-items: stretch;
             }
             #digital {
-                font-size: 18px;
-                padding: 4px 12px;
-            }
-            .crap-marquee {
-                font-size: 12px;
-                letter-spacing: 3px;
+                font-size: 20px;
             }
         }
 
-        #clock-wrap {
-            animation: wobble 3s ease-in-out infinite alternate;
-        }
-        @keyframes wobble {
-            0% {
-                transform: rotate(-1.5deg) scale(0.99);
-            }
-            100% {
-                transform: rotate(2deg) scale(1.01);
-            }
-        }
-
-        #controls {
-            animation: wobble2 4s ease-in-out infinite alternate-reverse;
-        }
-        @keyframes wobble2 {
-            0% {
-                transform: rotate(0.5deg) translateX(-2px);
-            }
-            100% {
-                transform: rotate(-1deg) translateX(2px);
-            }
-        }
-
-        #app::before {
-            content: "⏣ ⏣ ⏣ ⏣ ⏣ ⏣ ⏣ ⏣";
-            position: fixed;
-            bottom: 4px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #ff00ff;
-            font-size: 14px;
-            letter-spacing: 8px;
-            opacity: 0.3;
-            z-index: 0;
-            font-family: 'Press Start 2P', monospace;
-            animation: blinkText 1.2s step-end infinite;
-        }
-
-        [title] {
-            position: relative;
-        }
-        [title]:hover::after {
-            content: attr(title);
-            position: absolute;
-            bottom: 120%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #000;
-            color: #ff00ff;
-            padding: 4px 12px;
-            border: 4px solid #00ff88;
-            border-radius: 10px 0 10px 0;
-            font-size: 8px;
-            white-space: nowrap;
-            font-family: 'Comic Sans MS', cursive;
-            box-shadow: 0 0 30px #ff00ff;
-            z-index: 999;
-        }
-
-        ::-webkit-scrollbar {
-            width: 16px;
-            background: #1a0a2e;
-        }
-        ::-webkit-scrollbar-track {
-            background: repeating-linear-gradient(45deg, #ff00ff, #ff00ff 4px, #00ff88 4px, #00ff88 8px);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #ffcc00;
-            border: 4px solid #ff00ff;
-            border-radius: 20px;
-            box-shadow: 0 0 40px #ff00ff;
-        }
-
-        /* ---- MODAL (for metadata) ---- */
+        /* ---- MODAL ---- */
         #metaModal {
             display: none;
             position: fixed;
@@ -548,9 +630,7 @@
     <!-- ===== MARQUEE ===== -->
     <div class="crap-marquee" role="marquee">
         <span>
-            ✦ CLOCK → NFT METADATA GENERATOR ✦
-            &nbsp;▸&nbsp; CLICK "GENERATE METADATA" &nbsp;▸&nbsp;
-            ✦ TIME IS AN ILLUSION, BUT METADATA IS FOREVER ✦
+            ✦ TIME IS AN ILLUSION · METADATA IS FOREVER ✦
         </span>
     </div>
 
@@ -560,12 +640,16 @@
         <!-- background rain canvas -->
         <canvas id="rain" aria-hidden="true"></canvas>
 
+        <!-- LEFT: CLOCK -->
         <section id="clock-wrap">
             <canvas id="clock" width="520" height="520" aria-label="Analog clock"></canvas>
             <div id="digital" aria-live="polite">--:--:--</div>
         </section>
 
+        <!-- RIGHT: CONTROLS -->
         <nav id="controls" role="region" aria-label="Clock controls">
+
+            <!-- Row 1: Play/Pause, Speed, Mode -->
             <div class="row">
                 <button id="playPause" aria-pressed="false" title="Play / Pause">⏸ PAUSE</button>
                 <label class="control small">
@@ -581,6 +665,7 @@
                 </label>
             </div>
 
+            <!-- Row 2: Date, Time, Set -->
             <div class="row">
                 <label class="control">
                     📅 DATE
@@ -593,6 +678,7 @@
                 <button id="applyTime">⚡ SET</button>
             </div>
 
+            <!-- Row 3: Timezone, 24h, Sync, Reset -->
             <div class="row">
                 <label class="control">
                     🌍 TZ
@@ -602,18 +688,52 @@
                     24h
                     <input id="toggle24" type="checkbox" />
                 </label>
-            </div>
-
-            <div class="row small">
                 <button id="nowBtn">🔄 NOW</button>
                 <button id="resetBtn">⟲ RESET</button>
+            </div>
+
+            <!-- Row 4: Generate Metadata -->
+            <div class="row" style="justify-content:center;">
                 <button id="generateMetaBtn">📄 GENERATE METADATA</button>
             </div>
-        </nav>
 
-        <small style="margin-top:4px;z-index:1;position:relative;background:#000;padding:2px 16px;border-radius:20px;border:2px solid #ff00ff;">
-            ⚡ CRAP DESIGN v2.0 — MADE WITH 💩 &amp; ☕
-        </small>
+            <!-- ===== SECRET MESSAGE WITH ENCRYPTION ===== -->
+            <div class="message-row">
+                <label style="color:#ffcc00;font-size:11px;font-family:'Press Start 2P',cursive;">
+                    ✉️ SECRET MESSAGE (AES‑GCM encrypted, time‑locked)
+                </label>
+                <textarea id="secretMessage" placeholder="Write your hidden message here..."></textarea>
+
+                <div class="input-group">
+                    <label>🔑 Password</label>
+                    <input type="password" id="encryptPassword" placeholder="Password for encryption" />
+                    <label>⏰ Reveal Time (UTC)</label>
+                    <input type="datetime-local" id="revealTime" />
+                </div>
+
+                <div class="actions">
+                    <button id="encryptBtn">🔐 ENCRYPT & PREPARE</button>
+                    <button id="clearMsgBtn">🗑️ CLEAR</button>
+                    <span id="msgStatus" class="message-status">No message prepared.</span>
+                </div>
+            </div>
+
+            <!-- ===== REVEAL MESSAGE ===== -->
+            <div class="reveal-row">
+                <label style="color:#00ff88;font-size:11px;font-family:'Press Start 2P',cursive;">
+                    📂 UPLOAD METADATA + PASSWORD TO REVEAL
+                </label>
+                <div class="input-group">
+                    <input type="file" id="metaFileInput" accept=".json" />
+                    <input type="password" id="revealPassword" placeholder="Password" />
+                </div>
+                <div class="actions">
+                    <button id="revealMsgBtn">🔍 REVEAL</button>
+                </div>
+                <div id="revealedMessage" class="revealed-message">Waiting for metadata...</div>
+            </div>
+
+        </nav>
     </main>
 
     <!-- ===== METADATA MODAL ===== -->
@@ -629,7 +749,7 @@
     </div>
 
     <!-- ============================================================ -->
-    <!-- ALL JAVASCRIPT INLINED                                        -->
+    <!-- JAVASCRIPT (core clock + AES‑GCM time‑locked messages)       -->
     <!-- ============================================================ -->
     <script>
         (function() {
@@ -658,6 +778,34 @@
             const closeModalBtn = document.getElementById('closeModalBtn');
             const downloadMetaBtn = document.getElementById('downloadMetaBtn');
 
+            // Message elements
+            const secretMessage = document.getElementById('secretMessage');
+            const encryptPassword = document.getElementById('encryptPassword');
+            const revealTime = document.getElementById('revealTime');
+            const encryptBtn = document.getElementById('encryptBtn');
+            const clearMsgBtn = document.getElementById('clearMsgBtn');
+            const msgStatus = document.getElementById('msgStatus');
+
+            const metaFileInput = document.getElementById('metaFileInput');
+            const revealPassword = document.getElementById('revealPassword');
+            const revealMsgBtn = document.getElementById('revealMsgBtn');
+            const revealedMessage = document.getElementById('revealedMessage');
+
+            // ---- state ----
+            let running = true;
+            let speed = parseFloat(speedInput.value) || 1;
+            let use24 = false;
+            let mode = 'simulated';
+
+            let simulatedTime = Date.now();
+            let lastTick = performance.now();
+            let initialSimulatedTime = simulatedTime;
+            let initialSimulatedDate = new Date(simulatedTime);
+
+            // Encrypted payload and reveal time (prepared by user)
+            let preparedPayload = ''; // base64 of salt+iv+ciphertext
+            let preparedRevealTime = ''; // ISO string (UTC)
+
             // ---- DPR ----
             const DPR = Math.max(1, window.devicePixelRatio || 1);
 
@@ -681,18 +829,6 @@
             }
             window.addEventListener('resize', resizeRain);
             resizeRain();
-
-            // ---- state ----
-            let running = true;
-            let speed = parseFloat(speedInput.value) || 1;
-            let timezoneOffsetMinutes = 0;
-            let use24 = false;
-            let mode = 'simulated';
-
-            let simulatedTime = Date.now();
-            let lastTick = performance.now();
-            let initialSimulatedTime = simulatedTime;
-            let initialSimulatedDate = new Date(simulatedTime);
 
             // ---- timezone select ----
             const zones = [
@@ -797,7 +933,7 @@
             }
             requestAnimationFrame(rainLoop);
 
-            // ---- draw clock ----
+            // ---- draw clock (same as before) ----
             function drawClock(date, simTime) {
                 ctx.clearRect(0, 0, width, height);
                 const cx = width / 2,
@@ -977,7 +1113,7 @@
                 requestAnimationFrame(tick);
             }
 
-            // ---- controls ----
+            // ---- controls (same) ----
             playPauseBtn.addEventListener('click', () => {
                 running = !running;
                 playPauseBtn.textContent = running ? '⏸ PAUSE' : '▶ PLAY';
@@ -1088,6 +1224,13 @@
                 toggle24.checked = false;
                 use24 = false;
                 timezoneSelect.value = 'local';
+                // Clear message state
+                secretMessage.value = '';
+                encryptPassword.value = '';
+                revealTime.value = '';
+                preparedPayload = '';
+                preparedRevealTime = '';
+                msgStatus.textContent = 'No message prepared.';
             });
 
             // ---- dragging ----
@@ -1151,9 +1294,111 @@
             window.addEventListener('touchmove', pointerMove, { passive: false });
             window.addEventListener('touchend', pointerUp);
 
-            // ---- METADATA GENERATOR ----
+            // ---- AES‑GCM Encryption / Decryption utilities ----
+            async function deriveKey(password, salt) {
+                const enc = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey(
+                    'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
+                );
+                return crypto.subtle.deriveKey({
+                        name: 'PBKDF2',
+                        salt: salt,
+                        iterations: 100000,
+                        hash: 'SHA-256'
+                    },
+                    keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+                );
+            }
+
+            async function encryptMessage(message, password) {
+                const enc = new TextEncoder();
+                const data = enc.encode(message);
+
+                // Generate salt and iv
+                const salt = crypto.getRandomValues(new Uint8Array(16));
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+
+                const key = await deriveKey(password, salt);
+
+                const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv },
+                    key, data
+                );
+
+                // Combine salt + iv + ciphertext
+                const combined = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
+                combined.set(salt, 0);
+                combined.set(iv, salt.length);
+                combined.set(new Uint8Array(ciphertext), salt.length + iv.length);
+
+                return btoa(String.fromCharCode(...combined));
+            }
+
+            async function decryptMessage(combinedBase64, password) {
+                const combined = Uint8Array.from(atob(combinedBase64), c => c.charCodeAt(0));
+
+                const salt = combined.slice(0, 16);
+                const iv = combined.slice(16, 28);
+                const ciphertext = combined.slice(28);
+
+                const key = await deriveKey(password, salt);
+
+                try {
+                    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv },
+                        key, ciphertext
+                    );
+                    return new TextDecoder().decode(decrypted);
+                } catch (e) {
+                    throw new Error('Decryption failed. Wrong password or corrupted data.');
+                }
+            }
+
+            // ---- ENCRYPT & PREPARE ----
+            encryptBtn.addEventListener('click', async () => {
+                const msg = secretMessage.value.trim();
+                const pwd = encryptPassword.value;
+                const rTime = revealTime.value;
+
+                if (!msg) {
+                    msgStatus.textContent = '⚠️ Please write a message.';
+                    return;
+                }
+                if (!pwd) {
+                    msgStatus.textContent = '⚠️ Please enter a password.';
+                    return;
+                }
+                if (!rTime) {
+                    msgStatus.textContent = '⚠️ Please set a reveal time (UTC).';
+                    return;
+                }
+
+                try {
+                    const encrypted = await encryptMessage(msg, pwd);
+                    preparedPayload = encrypted;
+                    // Store reveal time as ISO string (UTC)
+                    const dt = new Date(rTime);
+                    if (isNaN(dt.getTime())) {
+                        msgStatus.textContent = '⚠️ Invalid date/time.';
+                        return;
+                    }
+                    preparedRevealTime = dt.toISOString();
+                    msgStatus.textContent = `✅ Encrypted and prepared. Payload length: ${encrypted.length} chars. Reveal at ${preparedRevealTime}.`;
+                    // Clear the message field for security? We'll keep it, but user may want to clear.
+                } catch (err) {
+                    msgStatus.textContent = `❌ Encryption error: ${err.message}`;
+                }
+            });
+
+            clearMsgBtn.addEventListener('click', () => {
+                secretMessage.value = '';
+                encryptPassword.value = '';
+                revealTime.value = '';
+                preparedPayload = '';
+                preparedRevealTime = '';
+                msgStatus.textContent = 'No message prepared.';
+            });
+
+            // ---- METADATA GENERATOR (includes encrypted payload and reveal time) ----
             generateMetaBtn.addEventListener('click', function() {
-                // Capture current state
                 const date = nowWithOffset(simulatedTime);
                 const year = date.getFullYear();
                 const month = date.getMonth() + 1;
@@ -1163,69 +1408,79 @@
                 const seconds = date.getSeconds();
                 const ms = Math.floor((simulatedTime / 1000 - Math.floor(simulatedTime / 1000)) * 1000);
 
-                // Capture canvas image as data URL (PNG)
                 const imageDataURL = canvas.toDataURL('image/png');
 
-                // Build metadata object
+                const attributes = [{
+                    trait_type: "Year",
+                    value: year
+                }, {
+                    trait_type: "Month",
+                    value: month
+                }, {
+                    trait_type: "Day",
+                    value: day
+                }, {
+                    trait_type: "Hour (24h)",
+                    value: hours
+                }, {
+                    trait_type: "Minute",
+                    value: minutes
+                }, {
+                    trait_type: "Second",
+                    value: seconds
+                }, {
+                    trait_type: "Millisecond",
+                    value: ms
+                }, {
+                    trait_type: "Speed (sim sec/real sec)",
+                    value: parseFloat(speed).toFixed(2)
+                }, {
+                    trait_type: "Mode",
+                    value: mode
+                }, {
+                    trait_type: "Timezone",
+                    value: timezoneSelect.options[timezoneSelect.selectedIndex].text
+                }, {
+                    trait_type: "24h Format",
+                    value: use24 ? "Yes" : "No"
+                }, {
+                    trait_type: "Running",
+                    value: running ? "Yes" : "No"
+                }, {
+                    trait_type: "Unix Timestamp (ms)",
+                    value: simulatedTime
+                }];
+
+                // Add encrypted payload and reveal time if prepared
+                if (preparedPayload) {
+                    attributes.push({
+                        trait_type: "EncryptedPayload (base64)",
+                        value: preparedPayload
+                    });
+                }
+                if (preparedRevealTime) {
+                    attributes.push({
+                        trait_type: "RevealTimeUTC",
+                        value: preparedRevealTime
+                    });
+                }
+
                 const metadata = {
                     name: `Clock NFT #${Date.now().toString(16)}`,
                     description: `A unique clock moment captured at ${hours}:${minutes}:${seconds} on ${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}.`,
                     image: imageDataURL,
-                    attributes: [{
-                        trait_type: "Year",
-                        value: year
-                    }, {
-                        trait_type: "Month",
-                        value: month
-                    }, {
-                        trait_type: "Day",
-                        value: day
-                    }, {
-                        trait_type: "Hour (24h)",
-                        value: hours
-                    }, {
-                        trait_type: "Minute",
-                        value: minutes
-                    }, {
-                        trait_type: "Second",
-                        value: seconds
-                    }, {
-                        trait_type: "Millisecond",
-                        value: ms
-                    }, {
-                        trait_type: "Speed (sim sec/real sec)",
-                        value: parseFloat(speed).toFixed(2)
-                    }, {
-                        trait_type: "Mode",
-                        value: mode
-                    }, {
-                        trait_type: "Timezone",
-                        value: timezoneSelect.options[timezoneSelect.selectedIndex].text
-                    }, {
-                        trait_type: "24h Format",
-                        value: use24 ? "Yes" : "No"
-                    }, {
-                        trait_type: "Running",
-                        value: running ? "Yes" : "No"
-                    }]
+                    attributes: attributes
                 };
-
-                // Add extra info like timestamp
-                metadata.attributes.push({
-                    trait_type: "Unix Timestamp (ms)",
-                    value: simulatedTime
-                });
 
                 const jsonString = JSON.stringify(metadata, null, 2);
                 metaTextarea.value = jsonString;
                 metaModal.classList.add('open');
             });
 
-            // ---- modal controls ----
+            // ---- MODAL CONTROLS ----
             function closeModal() {
                 metaModal.classList.remove('open');
             }
-
             closeModalBtn.addEventListener('click', closeModal);
             metaModal.addEventListener('click', function(e) {
                 if (e.target === metaModal) closeModal();
@@ -1243,6 +1498,68 @@
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
+            });
+
+            // ---- REVEAL MESSAGE (time + password) ----
+            revealMsgBtn.addEventListener('click', async () => {
+                const file = metaFileInput.files[0];
+                if (!file) {
+                    revealedMessage.textContent = '⚠️ Please select a metadata JSON file.';
+                    return;
+                }
+                const pwd = revealPassword.value;
+                if (!pwd) {
+                    revealedMessage.textContent = '⚠️ Please enter the password.';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const json = JSON.parse(e.target.result);
+                        // Find encrypted payload and reveal time
+                        const payloadAttr = json.attributes?.find(a => a.trait_type ===
+                            'EncryptedPayload (base64)');
+                        const timeAttr = json.attributes?.find(a => a.trait_type === 'RevealTimeUTC');
+
+                        if (!payloadAttr || !payloadAttr.value) {
+                            revealedMessage.textContent = '⚠️ No encrypted payload found in metadata.';
+                            return;
+                        }
+                        if (!timeAttr || !timeAttr.value) {
+                            revealedMessage.textContent = '⚠️ No reveal time found in metadata.';
+                            return;
+                        }
+
+                        const revealTimeUTC = new Date(timeAttr.value);
+                        if (isNaN(revealTimeUTC.getTime())) {
+                            revealedMessage.textContent = '⚠️ Invalid reveal time in metadata.';
+                            return;
+                        }
+
+                        // Check if current time is within ±3 minutes (6‑minute window)
+                        const now = new Date();
+                        const diffMs = Math.abs(now.getTime() - revealTimeUTC.getTime());
+                        const diffMinutes = diffMs / (1000 * 60);
+                        if (diffMinutes > 3) {
+                            const status = now < revealTimeUTC ? 'Not yet time.' : 'Reveal window has passed.';
+                            revealedMessage.textContent = `⏳ ${status} (window ±3 min, current diff = ${diffMinutes.toFixed(1)} min)`;
+                            return;
+                        }
+
+                        // Decrypt
+                        try {
+                            const decrypted = await decryptMessage(payloadAttr.value, pwd);
+                            revealedMessage.textContent = `💬 ${decrypted}`;
+                        } catch (decErr) {
+                            revealedMessage.textContent = `❌ Decryption failed: ${decErr.message}`;
+                        }
+
+                    } catch (parseErr) {
+                        revealedMessage.textContent = '⚠️ Invalid JSON file.';
+                    }
+                };
+                reader.readAsText(file);
             });
 
             // ---- start ----
@@ -1273,6 +1590,5 @@
 
         })();
     </script>
-
 </body>
 </html>
